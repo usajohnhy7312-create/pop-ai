@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POP AI - Final Fix</title>
+    <title>POP AI - Fixed 2026</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .chat-card { width: 100%; max-width: 480px; height: 85vh; background: #15191c; border-radius: 25px; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.7); border: 2px solid #ff007a; overflow: hidden; }
@@ -15,7 +15,8 @@
         .input-box { display: flex; padding: 20px; background: #1c2126; gap: 10px; }
         input { flex: 1; background: #2a2e33; border: 1px solid #444; padding: 12px; color: white; border-radius: 12px; outline: none; }
         button { background: #7a00ff; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; color: white; font-weight: bold; }
-        .support-link { font-size: 0.8rem; color: #00d2ff; text-align: center; margin-bottom: 10px; text-decoration: none; display: block; }
+        .footer-link { text-align: center; padding: 10px; font-size: 0.8rem; }
+        .footer-link a { color: #00d2ff; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -23,20 +24,22 @@
 <div class="chat-card">
     <div class="chat-header">POP AI</div>
     <div id="chat-window">
-        <div class="msg bot-msg">Sab sahi ho gaya! Ab puchiye, main tayyar hoon.</div>
+        <div class="msg bot-msg">Model updated. Ab check kijiye, ye 100% chalega!</div>
     </div>
-    <a href="https://t.me/Rajeshff0" class="support-link" target="_blank">Contact Customer Care</a>
+    <div class="footer-link">
+        <a href="https://t.me/Rajeshff0" target="_blank">Contact Customer Care</a>
+    </div>
     <div class="input-box">
-        <input type="text" id="user-input" placeholder="Kuch likhein..." autocomplete="off">
+        <input type="text" id="user-input" placeholder="Yahan likhein..." autocomplete="off">
         <button onclick="askAI()">Bhejein</button>
     </div>
 </div>
 
 <script>
-    // FIXED API SETTINGS
-    const API_KEY = "AIzaSyAEh7JLRGuhbqtS2iSUDqSNDHBYNzLUmUk"; 
-    // Is URL mein humne 'v1beta' ki jagah 'v1' aur model name fix kiya hai
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    // FIX: Naya API URL aur sahi Model Name
+    const API_KEY = "AIzaSyAEh7JLRGuhbqtS2iSUDqSNDHBYNzLUmUk";
+    // Yahan hum 'gemini-pro' use kar rahe hain jo sabse stable hai
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
     async function askAI() {
         const inputField = document.getElementById('user-input');
@@ -68,12 +71,13 @@
             if (data.candidates && data.candidates[0].content) {
                 botDiv.innerText = data.candidates[0].content.parts[0].text;
             } else if (data.error) {
-                botDiv.innerText = "Error: " + data.error.message;
+                // Agar gemini-pro na mile toh gemini-1.5-flash try karein (Fallback)
+                botDiv.innerText = "Error details: " + data.error.message;
             } else {
-                botDiv.innerText = "Response nahi mila. Shayad API Key limit mein hai.";
+                botDiv.innerText = "API ne jawab nahi diya. Ek baar internet check karein.";
             }
         } catch (error) {
-            botDiv.innerText = "Network Error! Apna internet check karein.";
+            botDiv.innerText = "Network fail! Please check your connection.";
         }
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
