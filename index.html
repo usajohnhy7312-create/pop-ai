@@ -1,227 +1,98 @@
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<html lang="hi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>POP AI - The Super Brain</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --bg-main: #343541;
-      --bg-sidebar: #202123;
-      --bg-assistant: #444654;
-    }
-    body { background: var(--bg-main); color: #f3f4f6; font-family: system-ui; margin: 0; height: 100vh; overflow: hidden; }
-    .sidebar { transition: transform 0.3s ease; }
-    .message pre { background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); }
-    .message code { background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 0.25rem; }
-    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POP AI - Mera Assistant</title>
+    <style>
+        /* Modern & Pop Design */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0b0e11; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-card { width: 100%; max-width: 480px; height: 85vh; background: #15191c; border-radius: 25px; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.7); border: 2px solid #ff007a; overflow: hidden; }
+        .chat-header { padding: 20px; text-align: center; background: linear-gradient(90deg, #ff007a, #7a00ff); color: white; font-weight: bold; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #15191c; scroll-behavior: smooth; }
+        
+        /* Message Bubbles */
+        .msg { padding: 12px 18px; border-radius: 20px; max-width: 80%; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .user-msg { align-self: flex-end; background: #ff007a; color: white; border-bottom-right-radius: 2px; }
+        .bot-msg { align-self: flex-start; background: #2a2e33; color: #f0f0f0; border: 1px solid #444; border-bottom-left-radius: 2px; }
+        
+        /* Input Area */
+        .input-box { display: flex; padding: 20px; background: #1c2126; gap: 10px; border-top: 1px solid #333; }
+        input { flex: 1; background: #2a2e33; border: 1px solid #444; padding: 12px 15px; color: white; border-radius: 12px; outline: none; font-size: 1rem; }
+        input:focus { border-color: #ff007a; }
+        button { background: #7a00ff; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        button:hover { background: #ff007a; transform: translateY(-2px); }
+        
+        /* Custom Scrollbar */
+        #chat-window::-webkit-scrollbar { width: 5px; }
+        #chat-window::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+    </style>
 </head>
-<body class="flex h-screen">
+<body>
 
-  <!-- Sidebar Overlay -->
-  <div id="overlay" class="fixed inset-0 bg-black/60 z-20 md:hidden hidden" onclick="toggleSidebar()"></div>
-
-  <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 z-30 w-[260px] bg-[var(--bg-sidebar)] -translate-x-full md:translate-x-0 flex flex-col">
-    <div class="p-4 flex-1 overflow-y-auto scrollbar-thin">
-      <button onclick="newChat()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:bg-white/10 text-white mb-6">
-        <span class="text-xl">+</span> Naya Chat
-      </button>
-
-      <div class="text-xs font-semibold text-gray-500 px-3 mb-2">HISTORY</div>
-      <div id="history" class="space-y-1"></div>
+<div class="chat-card">
+    <div class="chat-header">POP AI</div>
+    <div id="chat-window">
+        <div class="msg bot-msg">Namaste! Main **POP AI** hoon. Main aapki kya madad kar sakta hoon?</div>
     </div>
-
-    <div class="p-4 border-t border-white/20">
-      <button onclick="alert('Key already set in code!')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-white">
-        🔑 API Key Set
-      </button>
+    <div class="input-box">
+        <input type="text" id="user-input" placeholder="Kuch mazedaar puchiye..." autocomplete="off">
+        <button onclick="askAI()">Bhejein</button>
     </div>
-  </aside>
+</div>
 
-  <!-- Main Area -->
-  <main class="flex-1 flex flex-col">
-    <!-- Mobile Header -->
-    <header class="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[var(--bg-main)]">
-      <button onclick="toggleSidebar()" class="text-3xl">☰</button>
-      <div class="font-bold text-xl tracking-tight">POP AI</div>
-      <button onclick="newChat()" class="text-3xl">+</button>
-    </header>
+<script>
+    const API_KEY = "AIzaSyCidUSOVufEHarXoiVUwGTdqQb8KF_nuIQ"; 
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-    <!-- Chat Container -->
-    <div id="chat" class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-32"></div>
+    async function askAI() {
+        const inputField = document.getElementById('user-input');
+        const chatWindow = document.getElementById('chat-window');
+        const userText = inputField.value.trim();
 
-    <!-- Input -->
-    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--bg-main)] to-transparent pt-12 pb-6 px-4">
-      <div class="max-w-3xl mx-auto">
-        <div class="flex items-end gap-2 bg-[#40414f] rounded-3xl p-2 border border-white/10 focus-within:border-teal-500">
-          <textarea id="input" rows="1" placeholder="Kya poochna hai boss?..." 
-            class="flex-1 bg-transparent outline-none px-4 py-3 resize-none max-h-52 text-white"
-            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendMsg()}"></textarea>
-          <button onclick="sendMsg()" id="sendBtn"
-            class="w-10 h-10 bg-teal-600 hover:bg-teal-500 rounded-2xl flex items-center justify-center text-xl transition-all">
-            →
-          </button>
-        </div>
-        <p class="text-center text-[10px] text-gray-500 mt-3">POP AI powered by Grok • Can make mistakes</p>
-      </div>
-    </div>
-  </main>
+        if (userText === "") return;
 
-  <script>
-    // ────────────────────────────────────────────────
-    // TERA API KEY YAHAN HARD-CODED HAI
-    const API_KEY = "xai-NIr2chgC5rYSTV6F2BsEKl0B71f8pHWrq4BbC5O8Lp2s7GDEbWHswdKBZgCzVG4mL1IOwhZrkaFJBnTE";
-    // ────────────────────────────────────────────────
+        // User Message
+        chatWindow.innerHTML += `<div class="msg user-msg">${userText}</div>`;
+        inputField.value = "";
+        chatWindow.scrollTop = chatWindow.scrollHeight;
 
-    let sessions = JSON.parse(localStorage.getItem('popai_sessions')) || [];
-    let currentId = null;
+        // Loading bubble
+        const botDiv = document.createElement("div");
+        botDiv.className = "msg bot-msg";
+        botDiv.innerText = "POP AI soch raha hai...";
+        chatWindow.appendChild(botDiv);
 
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('-translate-x-full');
-      document.getElementById('overlay').classList.toggle('hidden');
-    }
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: userText }] }]
+                })
+            });
 
-    function newChat() {
-      const id = Date.now().toString();
-      sessions.unshift({ id, title: "Naya Chat", messages: [] });
-      currentId = id;
-      saveSessions();
-      renderHistory();
-      renderChat();
-      if (window.innerWidth < 768) toggleSidebar();
-    }
-
-    function saveSessions() {
-      localStorage.setItem('popai_sessions', JSON.stringify(sessions));
-    }
-
-    function renderHistory() {
-      const container = document.getElementById('history');
-      container.innerHTML = '';
-      sessions.forEach(s => {
-        const active = s.id === currentId ? 'bg-[#343541] font-medium' : 'hover:bg-white/5';
-        const div = document.createElement('div');
-        div.className = `px-4 py-3 rounded-2xl cursor-pointer flex items-center gap-3 text-sm ${active}`;
-        div.innerHTML = `<span class="text-lg">💬</span><span class="truncate">${s.title}</span>`;
-        div.onclick = () => { currentId = s.id; renderHistory(); renderChat(); };
-        container.appendChild(div);
-      });
-    }
-
-    function getCurrentSession() {
-      return sessions.find(s => s.id === currentId) || sessions[0];
-    }
-
-    function renderChat() {
-      const container = document.getElementById('chat');
-      const session = getCurrentSession();
-      container.innerHTML = '';
-
-      if (!session || session.messages.length === 0) {
-        container.innerHTML = `
-          <div class="h-full flex flex-col items-center justify-center text-center px-6">
-            <div class="w-28 h-28 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center mb-8 shadow-2xl">
-              <span class="text-6xl">✨</span>
-            </div>
-            <h1 class="text-5xl font-bold mb-3 tracking-tight">POP AI</h1>
-            <p class="text-gray-400 max-w-md text-lg">Ab full Grok power on hai!<br>Bol kya poochna hai?</p>
-          </div>
-        `;
-        return;
-      }
-
-      session.messages.forEach(m => {
-        const isUser = m.role === 'user';
-        const bubble = document.createElement('div');
-        bubble.className = `max-w-3xl mx-auto flex gap-5 mb-8 ${isUser ? 'justify-end' : 'justify-start'}`;
-        bubble.innerHTML = `
-          <div class="${isUser ? 'bg-[#2a2b32]' : 'bg-[var(--bg-assistant)]'} rounded-3xl px-6 py-5 max-w-[85%]">
-            ${!isUser ? `<div class="flex items-center gap-2 mb-2"><span class="text-teal-400">🤖</span><span class="text-xs uppercase">POP AI</span></div>` : ''}
-            <div class="prose prose-invert text-[17px] leading-relaxed break-words">${simpleMarkdown(m.content)}</div>
-          </div>
-        `;
-        container.appendChild(bubble);
-      });
-      container.scrollTop = container.scrollHeight;
-    }
-
-    function simpleMarkdown(text) {
-      return text
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`([^`]+)`/g, '<code class="bg-black/50 px-1 rounded">$1</code>')
-        .replace(/\n/g, '<br>');
-    }
-
-    async function sendMsg() {
-      const input = document.getElementById('input');
-      const text = input.value.trim();
-      if (!text) return;
-
-      let session = getCurrentSession();
-      if (!session) { newChat(); session = getCurrentSession(); }
-
-      session.messages.push({ role: 'user', content: text });
-      if (session.messages.length === 1) {
-        session.title = text.substring(0, 35) + (text.length > 35 ? '...' : '');
-      }
-
-      renderHistory();
-      renderChat();
-      input.value = '';
-      document.getElementById('sendBtn').disabled = true;
-
-      // Typing indicator
-      const typing = document.createElement('div');
-      typing.id = 'typing';
-      typing.innerHTML = `<div class="bg-[var(--bg-assistant)] rounded-3xl px-6 py-5"><div class="flex gap-2"><div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce"></div><div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce [animation-delay:0.15s]"></div><div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce [animation-delay:0.3s]"></div></div></div>`;
-      document.getElementById('chat').appendChild(typing);
-      document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
-
-      let reply = '';
-
-      try {
-        const res = await fetch('https://api.x.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'grok-beta',           // ya 'grok-4' agar available ho
-            messages: session.messages,
-            temperature: 0.7,
-            max_tokens: 2048
-          })
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error?.message || 'API error');
+            const data = await response.json();
+            
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                const aiReply = data.candidates[0].content.parts[0].text;
+                // AI Reply replace loading text
+                botDiv.innerHTML = aiReply.replace(/\n/g, "<br>"); 
+            } else {
+                botDiv.innerText = "Ups! Main samajh nahi paaya. Phir se likhiye?";
+            }
+        } catch (error) {
+            botDiv.innerText = "Error: Connection problem! Check kijiye ki aapka internet chal raha hai ya nahi.";
         }
-
-        const data = await res.json();
-        reply = data.choices[0].message.content;
-      } catch (e) {
-        reply = `Error aa gaya bhai: ${e.message}\n\nKey check kar, credits khatam to nahi hue? Ya model name galat hai.`;
-      }
-
-      session.messages.push({ role: 'assistant', content: reply });
-      saveSessions();
-      document.getElementById('typing')?.remove();
-      renderChat();
-      document.getElementById('sendBtn').disabled = false;
+        
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // Init
-    if (sessions.length === 0) newChat();
-    else currentId = sessions[0].id;
+    // Enter key support
+    document.getElementById('user-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') askAI();
+    });
+</script>
 
-    renderHistory();
-    renderChat();
-  </script>
 </body>
 </html>
