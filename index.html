@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="hi" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -9,331 +9,219 @@
     :root {
       --bg-main: #343541;
       --bg-sidebar: #202123;
-      --bg-message-user: #343541;
-      --bg-message-assistant: #444654;
-      --input-bg: #40414f;
+      --bg-assistant: #444654;
     }
-    body {
-      background: var(--bg-main);
-      color: #f3f4f6;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      margin: 0;
-      height: 100vh;
-      overflow: hidden;
-    }
-    .sidebar {
-      transition: transform 0.3s ease-in-out;
-    }
-    .message pre {
-      background: rgba(0,0,0,0.5);
-      padding: 1rem;
-      border-radius: 0.375rem;
-      overflow-x: auto;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .message code {
-      background: rgba(0,0,0,0.3);
-      padding: 0.125rem 0.25rem;
-      border-radius: 0.25rem;
-    }
-    .scrollbar-thin::-webkit-scrollbar {
-      width: 6px;
-    }
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-      background: #4b5563;
-      border-radius: 3px;
-    }
+    body { background: var(--bg-main); color: #f3f4f6; font-family: system-ui; margin: 0; height: 100vh; overflow: hidden; }
+    .sidebar { transition: transform 0.3s ease; }
+    .message pre { background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); }
+    .message code { background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 0.25rem; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
   </style>
 </head>
 <body class="flex h-screen">
 
-  <!-- Sidebar Overlay (mobile) -->
-  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 md:hidden hidden" onclick="toggleSidebar()"></div>
+  <!-- Sidebar Overlay -->
+  <div id="overlay" class="fixed inset-0 bg-black/60 z-20 md:hidden hidden" onclick="toggleSidebar()"></div>
 
   <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 z-30 w-[260px] bg-[var(--bg-sidebar)] transform -translate-x-full md:translate-x-0 flex flex-col">
-    
-    <div class="p-3 flex-1 overflow-y-auto scrollbar-thin">
-      <button onclick="createNewSession()" class="flex items-center gap-3 w-full px-3 py-3 rounded-md border border-white/20 hover:bg-gray-900 text-sm mb-4">
-        <span class="text-lg">+</span> New chat
+  <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 z-30 w-[260px] bg-[var(--bg-sidebar)] -translate-x-full md:translate-x-0 flex flex-col">
+    <div class="p-4 flex-1 overflow-y-auto scrollbar-thin">
+      <button onclick="newChat()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/20 hover:bg-white/10 text-white mb-6">
+        <span class="text-xl">+</span> Naya Chat
       </button>
 
-      <div class="text-xs font-semibold text-gray-500 px-3 py-2">History</div>
-      <div id="sessions-list" class="flex flex-col gap-2"></div>
+      <div class="text-xs font-semibold text-gray-500 px-3 mb-2">HISTORY</div>
+      <div id="history" class="space-y-1"></div>
     </div>
 
-    <div class="p-3 border-t border-white/20">
-      <button onclick="document.getElementById('settings-modal').classList.remove('hidden')" class="flex items-center gap-3 w-full px-3 py-3 rounded-md hover:bg-gray-900 text-sm">
-        <span>⚙️</span> Settings
+    <div class="p-4 border-t border-white/20">
+      <button onclick="alert('Key already set in code!')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-white">
+        🔑 API Key Set
       </button>
     </div>
   </aside>
 
-  <!-- Main Content -->
-  <main class="flex-1 flex flex-col relative">
-
+  <!-- Main Area -->
+  <main class="flex-1 flex flex-col">
     <!-- Mobile Header -->
-    <header class="flex items-center justify-between p-2 md:hidden border-b border-white/10 bg-[var(--bg-main)]">
-      <button onclick="toggleSidebar()" class="p-2 text-gray-300 text-2xl">☰</button>
-      <span class="font-bold">POP AI</span>
-      <button onclick="createNewSession()" class="p-2 text-gray-300 text-2xl">+</button>
+    <header class="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[var(--bg-main)]">
+      <button onclick="toggleSidebar()" class="text-3xl">☰</button>
+      <div class="font-bold text-xl tracking-tight">POP AI</div>
+      <button onclick="newChat()" class="text-3xl">+</button>
     </header>
 
-    <!-- Chat Area -->
-    <div id="chat-container" class="flex-1 overflow-y-auto scrollbar-thin pb-32">
-      <!-- Welcome screen will be shown when no messages -->
-    </div>
+    <!-- Chat Container -->
+    <div id="chat" class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-32"></div>
 
-    <!-- Input Area -->
-    <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)] to-transparent pt-10 pb-6 px-4">
-      <div class="max-w-3xl mx-auto relative">
-        <div class="flex items-end w-full p-3 bg-[var(--input-bg)] rounded-xl border border-black/10 shadow-md focus-within:ring-2 ring-teal-600/50">
-          <textarea
-            id="message-input"
-            rows="1"
-            placeholder="Send a message..."
-            class="w-full max-h-[200px] py-2 px-2 bg-transparent border-0 focus:ring-0 resize-none text-white outline-none"
-            onkeydown="if(event.key === 'Enter' && !event.shiftKey){event.preventDefault(); sendMessage();}"
-          ></textarea>
-          <button onclick="sendMessage()" id="send-btn" class="p-2 rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 transition-colors">
-            ➤
+    <!-- Input -->
+    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[var(--bg-main)] to-transparent pt-12 pb-6 px-4">
+      <div class="max-w-3xl mx-auto">
+        <div class="flex items-end gap-2 bg-[#40414f] rounded-3xl p-2 border border-white/10 focus-within:border-teal-500">
+          <textarea id="input" rows="1" placeholder="Kya poochna hai boss?..." 
+            class="flex-1 bg-transparent outline-none px-4 py-3 resize-none max-h-52 text-white"
+            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendMsg()}"></textarea>
+          <button onclick="sendMsg()" id="sendBtn"
+            class="w-10 h-10 bg-teal-600 hover:bg-teal-500 rounded-2xl flex items-center justify-center text-xl transition-all">
+            →
           </button>
         </div>
-        <div class="text-center text-xs text-gray-400 mt-2">
-          POP AI can make mistakes. Consider checking important information.
-        </div>
+        <p class="text-center text-[10px] text-gray-500 mt-3">POP AI powered by Grok • Can make mistakes</p>
       </div>
     </div>
-
   </main>
 
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="bg-[#202123] w-full max-w-md rounded-xl border border-white/10 shadow-2xl overflow-hidden">
-      <div class="p-4 border-b border-white/10 flex justify-between items-center">
-        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-          <span class="text-teal-500">🧠</span> Configure Brain
-        </h2>
-        <button onclick="document.getElementById('settings-modal').classList.add('hidden')" class="text-gray-400 hover:text-white text-xl">×</button>
-      </div>
-      <div class="p-6 space-y-4">
-        <p class="text-sm text-gray-300">
-          To activate real GPT-3.5/4 answers, enter your OpenAI API Key.
-        </p>
-        <div class="space-y-2">
-          <label class="text-xs font-medium text-gray-500 uppercase">OpenAI API Key</label>
-          <input id="api-key-input" type="password" placeholder="sk-..." class="w-full bg-[#343541] border border-white/10 rounded-md p-3 text-white focus:outline-none focus:border-teal-500">
-        </div>
-        <button onclick="saveApiKey()" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-md font-medium transition-colors">
-          Save & Activate
-        </button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    let sessions = JSON.parse(localStorage.getItem('pop_ai_sessions')) || [];
-    let currentSessionId = null;
-    let apiKey = localStorage.getItem('pop_ai_api_key') || '';
+    // ────────────────────────────────────────────────
+    // TERA API KEY YAHAN HARD-CODED HAI
+    const API_KEY = "xai-NIr2chgC5rYSTV6F2BsEKl0B71f8pHWrq4BbC5O8Lp2s7GDEbWHswdKBZgCzVG4mL1IOwhZrkaFJBnTE";
+    // ────────────────────────────────────────────────
 
-    if (sessions.length === 0) {
-      createNewSession();
-    } else {
-      currentSessionId = sessions[0].id;
-    }
+    let sessions = JSON.parse(localStorage.getItem('popai_sessions')) || [];
+    let currentId = null;
 
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebar-overlay');
-      sidebar.classList.toggle('-translate-x-full');
-      overlay.classList.toggle('hidden');
+      document.getElementById('sidebar').classList.toggle('-translate-x-full');
+      document.getElementById('overlay').classList.toggle('hidden');
     }
 
-    function createNewSession() {
-      const newSession = {
-        id: Date.now().toString(),
-        title: 'New Chat',
-        messages: [],
-        createdAt: Date.now()
-      };
-      sessions.unshift(newSession);
-      currentSessionId = newSession.id;
+    function newChat() {
+      const id = Date.now().toString();
+      sessions.unshift({ id, title: "Naya Chat", messages: [] });
+      currentId = id;
       saveSessions();
-      renderSessions();
-      renderMessages();
+      renderHistory();
+      renderChat();
       if (window.innerWidth < 768) toggleSidebar();
     }
 
-    function deleteSession(id) {
-      sessions = sessions.filter(s => s.id !== id);
-      if (currentSessionId === id) {
-        currentSessionId = sessions.length > 0 ? sessions[0].id : null;
-        if (!currentSessionId) createNewSession();
-      }
-      saveSessions();
-      renderSessions();
-      renderMessages();
-    }
-
     function saveSessions() {
-      localStorage.setItem('pop_ai_sessions', JSON.stringify(sessions));
+      localStorage.setItem('popai_sessions', JSON.stringify(sessions));
     }
 
-    function saveApiKey() {
-      apiKey = document.getElementById('api-key-input').value.trim();
-      localStorage.setItem('pop_ai_api_key', apiKey);
-      document.getElementById('settings-modal').classList.add('hidden');
-      alert(apiKey ? 'API Key saved!' : 'Running in demo mode (no real AI)');
-    }
-
-    function getCurrentSession() {
-      return sessions.find(s => s.id === currentSessionId) || sessions[0];
-    }
-
-    function renderSessions() {
-      const container = document.getElementById('sessions-list');
+    function renderHistory() {
+      const container = document.getElementById('history');
       container.innerHTML = '';
-      sessions.forEach(session => {
-        const isActive = session.id === currentSessionId;
+      sessions.forEach(s => {
+        const active = s.id === currentId ? 'bg-[#343541] font-medium' : 'hover:bg-white/5';
         const div = document.createElement('div');
-        div.className = `group flex items-center gap-3 px-3 py-3 rounded-md text-sm cursor-pointer transition-colors relative ${isActive ? 'bg-[#343541]' : 'hover:bg-[#2A2B32]'}`;
-        div.innerHTML = `
-          <span>💬</span>
-          <span class="truncate flex-1">${session.title || 'New Chat'}</span>
-          ${isActive ? `<button onclick="event.stopPropagation(); deleteSession('${session.id}')" class="p-1 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">🗑</button>` : ''}
-        `;
-        div.onclick = () => {
-          currentSessionId = session.id;
-          renderSessions();
-          renderMessages();
-          if (window.innerWidth < 768) toggleSidebar();
-        };
+        div.className = `px-4 py-3 rounded-2xl cursor-pointer flex items-center gap-3 text-sm ${active}`;
+        div.innerHTML = `<span class="text-lg">💬</span><span class="truncate">${s.title}</span>`;
+        div.onclick = () => { currentId = s.id; renderHistory(); renderChat(); };
         container.appendChild(div);
       });
     }
 
-    function simpleMarkdown(text) {
-      // Very basic markdown → HTML
-      return text
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\n/g, '<br>');
+    function getCurrentSession() {
+      return sessions.find(s => s.id === currentId) || sessions[0];
     }
 
-    function renderMessages() {
-      const container = document.getElementById('chat-container');
+    function renderChat() {
+      const container = document.getElementById('chat');
       const session = getCurrentSession();
       container.innerHTML = '';
 
       if (!session || session.messages.length === 0) {
         container.innerHTML = `
-          <div class="h-full flex flex-col items-center justify-center p-8 text-center">
-            <div class="w-24 h-24 bg-teal-600 rounded-full flex items-center justify-center mb-6">
-              <span class="text-5xl">✨</span>
+          <div class="h-full flex flex-col items-center justify-center text-center px-6">
+            <div class="w-28 h-28 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center mb-8 shadow-2xl">
+              <span class="text-6xl">✨</span>
             </div>
-            <h1 class="text-4xl font-bold mb-4">POP AI</h1>
-            <p class="text-gray-400 max-w-md mb-8">The realistic AI assistant with a super brain. Ask me anything!</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl w-full">
-              ${[
-                "Explain quantum computing in simple terms",
-                "Write a Javascript code for a todo list",
-                "How do I make a chocolate cake?",
-                "Tell me a joke about robots"
-              ].map(s => `
-                <button onclick="document.getElementById('message-input').value = this.textContent" class="p-4 bg-[#202123]/50 border border-white/10 rounded-xl hover:bg-[#202123] text-left text-sm text-gray-300 transition-colors">
-                  ${s}
-                </button>
-              `).join('')}
-            </div>
+            <h1 class="text-5xl font-bold mb-3 tracking-tight">POP AI</h1>
+            <p class="text-gray-400 max-w-md text-lg">Ab full Grok power on hai!<br>Bol kya poochna hai?</p>
           </div>
         `;
         return;
       }
 
-      session.messages.forEach(msg => {
+      session.messages.forEach(m => {
+        const isUser = m.role === 'user';
         const bubble = document.createElement('div');
-        bubble.className = `w-full border-b border-black/10 ${msg.role === 'assistant' ? 'bg-[var(--bg-message-assistant)]' : 'bg-[var(--bg-message-user)]'}`;
+        bubble.className = `max-w-3xl mx-auto flex gap-5 mb-8 ${isUser ? 'justify-end' : 'justify-start'}`;
         bubble.innerHTML = `
-          <div class="max-w-3xl mx-auto flex gap-4 p-4 md:p-6 text-base">
-            <div class="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant' ? 'bg-teal-600' : 'bg-indigo-600'}">
-              ${msg.role === 'assistant' ? '🤖' : '👤'}
-            </div>
-            <div class="flex-1 overflow-hidden prose prose-invert max-w-none leading-7">
-              ${simpleMarkdown(msg.content)}
-            </div>
+          <div class="${isUser ? 'bg-[#2a2b32]' : 'bg-[var(--bg-assistant)]'} rounded-3xl px-6 py-5 max-w-[85%]">
+            ${!isUser ? `<div class="flex items-center gap-2 mb-2"><span class="text-teal-400">🤖</span><span class="text-xs uppercase">POP AI</span></div>` : ''}
+            <div class="prose prose-invert text-[17px] leading-relaxed break-words">${simpleMarkdown(m.content)}</div>
           </div>
         `;
         container.appendChild(bubble);
       });
-
       container.scrollTop = container.scrollHeight;
     }
 
-    async function sendMessage() {
-      const input = document.getElementById('message-input');
+    function simpleMarkdown(text) {
+      return text
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/`([^`]+)`/g, '<code class="bg-black/50 px-1 rounded">$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    async function sendMsg() {
+      const input = document.getElementById('input');
       const text = input.value.trim();
       if (!text) return;
 
-      const session = getCurrentSession();
-      if (!session) return;
+      let session = getCurrentSession();
+      if (!session) { newChat(); session = getCurrentSession(); }
 
-      const userMsg = { role: 'user', content: text };
-      session.messages.push(userMsg);
-
+      session.messages.push({ role: 'user', content: text });
       if (session.messages.length === 1) {
-        session.title = text.slice(0, 30) + (text.length > 30 ? '...' : '');
+        session.title = text.substring(0, 35) + (text.length > 35 ? '...' : '');
       }
 
-      renderSessions();
-      renderMessages();
+      renderHistory();
+      renderChat();
       input.value = '';
+      document.getElementById('sendBtn').disabled = true;
 
-      document.getElementById('send-btn').disabled = true;
+      // Typing indicator
+      const typing = document.createElement('div');
+      typing.id = 'typing';
+      typing.innerHTML = `<div class="bg-[var(--bg-assistant)] rounded-3xl px-6 py-5"><div class="flex gap-2"><div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce"></div><div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce [animation-delay:0.15s]"></div><div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce [animation-delay:0.3s]"></div></div></div>`;
+      document.getElementById('chat').appendChild(typing);
+      document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
 
-      let aiReply = '';
+      let reply = '';
 
-      if (apiKey) {
-        try {
-          const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: session.messages.map(m => ({role: m.role, content: m.content}))
-            })
-          });
-          const data = await res.json();
-          if (data.error) throw new Error(data.error.message);
-          aiReply = data.choices[0].message.content;
-        } catch (err) {
-          aiReply = `Error: ${err.message || 'Check your API key'}`;
+      try {
+        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'grok-beta',           // ya 'grok-4' agar available ho
+            messages: session.messages,
+            temperature: 0.7,
+            max_tokens: 2048
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error?.message || 'API error');
         }
-      } else {
-        // Demo mode
-        await new Promise(r => setTimeout(r, 1200));
-        aiReply = demoReply(text);
+
+        const data = await res.json();
+        reply = data.choices[0].message.content;
+      } catch (e) {
+        reply = `Error aa gaya bhai: ${e.message}\n\nKey check kar, credits khatam to nahi hue? Ya model name galat hai.`;
       }
 
-      session.messages.push({ role: 'assistant', content: aiReply });
+      session.messages.push({ role: 'assistant', content: reply });
       saveSessions();
-      renderMessages();
-      document.getElementById('send-btn').disabled = false;
+      document.getElementById('typing')?.remove();
+      renderChat();
+      document.getElementById('sendBtn').disabled = false;
     }
 
-    function demoReply(input) {
-      const lower = input.toLowerCase();
-      if (lower.includes('hi') || lower.includes('hello')) return "Hello! I'm POP AI. How can I help?";
-      if (lower.includes('name')) return "I'm POP AI — your friendly super brain assistant.";
-      if (lower.includes('code')) return "Here's a quick example:\n```js\nconsole.log('Hello World!');\n```";
-      return "I'm in **demo mode** right now.\nAdd your OpenAI API key in Settings to unlock real answers!";
-    }
+    // Init
+    if (sessions.length === 0) newChat();
+    else currentId = sessions[0].id;
 
-    // Initial render
-    renderSessions();
-    renderMessages();
+    renderHistory();
+    renderChat();
   </script>
 </body>
 </html>
